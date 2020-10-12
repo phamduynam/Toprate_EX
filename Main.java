@@ -4,6 +4,8 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
 
 public  class Main {
     public static void main(String[] args) {
@@ -17,48 +19,42 @@ public  class Main {
         // read image
         ImageBmp image = new ImageBmp();
         try {
-            FileInputStream fileInputStream = new FileInputStream("C:/Users/Admin/Pictures/vietnam.bmp");
-            FileOutputStream fileOutputStream = new FileOutputStream("C:/Users/Admin/Pictures/ketqua.bmp");
+            FileInputStream fileInputStream = new FileInputStream("baitap.bmp");
+            FileOutputStream fileOutputStream = new FileOutputStream("ketqua.bmp");
 
-            int[] bOffBits = new int[4];
-            int[] bWidth =  new int[4];
-            int[] bHeight =  new int[4];
-            int[] bPlanes = new int[4];
-            // Skip Header 10 byte
+            byte[] bOffBits = new byte[4];
+            byte[] bWidth =  new byte[4];
+            byte[] bHeight =  new byte[4];
+
             fileInputStream.skip(10);
-
-            // Read Address Data Start
-            for (int i = 0 ; i< 4 ; i ++){
-                bOffBits[i] = fileInputStream.read();
-//                System.out.println(bOffBits[i]);
-            }
-            // Skip Size off header
-
+            // Read header address
+            fileInputStream.read(bOffBits);
+            // Skip header size.
             fileInputStream.skip(4);
+            // read Width
+            fileInputStream.read(bWidth);
+            // read height
+            fileInputStream.read(bHeight);
 
-            // Read Width
-            for (int i = 0 ; i < 4 ; i ++){
-                bWidth[i] = fileInputStream.read();
-//                System.out.println(bWidth[i]);
-            }
+//            system.out.println(arrays.tostring(boffbits));
+//            system.out.println(bytearraytoleint(boffbits));
+//
+//            system.out.println(arrays.tostring(bwidth));
+//            system.out.println(bytearraytoleint(bwidth));
+//
+//            system.out.println(arrays.tostring(bheight));
+//            system.out.println(bytearraytoleint(bheight));
 
-            // Read Height
-            for (int i = 0 ; i < bHeight.length ; i ++){
-                bHeight[i] = fileInputStream.read();
-//                System.out.println(bHeight[i]);
-            }
-
-            image.setiOffBits(arrayByteToInt(bOffBits));
-            image.setiWidth(arrayByteToInt(bWidth));
-            image.setiHeight(arrayByteToInt(bHeight));
+            image.setiOffBits(byteArrayToLeInt(bOffBits));
+            image.setiWidth(byteArrayToLeInt(bWidth));
+            image.setiHeight(byteArrayToLeInt(bHeight));
             image.setiPadding(image.getiWidth() % 4);
 
-            System.out.println(image.getiOffBits());
-            System.out.println(image.getiHeight());
-            System.out.println(image.getiWidth());
-            System.out.println(image.getiPadding());
+            changeColor(image,"baitap.bmp","ketqua.bmp");
 
-            changeColor(image,"C:/Users/Admin/Pictures/vietnam.bmp",fileOutputStream);
+            for (int i = 0 ; i <1000 ; i ++){
+                System.out.println(fileInputStream.read());
+            }
 
         }catch (IOException ex){
             ex.printStackTrace();
@@ -67,30 +63,15 @@ public  class Main {
     }
 
 
-    public static int convertByteToInt(byte[] bytes){
-        ByteBuffer bbf = ByteBuffer.wrap(bytes);
-        return bbf.getInt();
-    }
-
-    private static int arrayByteToInt (int[] bytes) {
-        int result = 0;
-        int base = 1;
-        for (int i = 0; i< bytes.length; i++) {
-            if (i>0) base *= 256;
-            result += bytes[i]*base;
-        }
-        return result;
-    }
-
-    public static void changeColor(ImageBmp imp, String url, FileOutputStream output) throws IOException {
-       FileInputStream input = new FileInputStream(url);
-
-
+    public static void changeColor(ImageBmp imp, String urlInput, String urlOutput) throws IOException {
+       FileInputStream input = new FileInputStream(urlInput);
+       FileOutputStream output = new FileOutputStream(urlOutput);
         // Write Header + Info
         for (int i = 0; i < imp.getiOffBits(); i++) {
             int res = input.read();
             output.write(res);
         }
+
         // Write Data
         int blue,green,red;
         double index;
@@ -98,16 +79,15 @@ public  class Main {
             for(int j = 0 ; j < imp.getiWidth(); j ++){
                 blue = input.read() ;
                 green = input.read() ;
-                red = input.read() ;
+                red = input.read();
 
                 // Neeu mau do vuot troi
                 if (red > blue && red > green) {
-                    index = (double)(256 - red)/80 + 1.8;
-                    if(red/blue >= index || red/green >= index){
-                        int temp = red;
-                        red = blue;
-                        blue = temp;
-                    }
+
+                       int temp = red;
+                       red = blue;
+                       blue = temp;
+
                 }
 
                 output.write(blue);
@@ -123,4 +103,20 @@ public  class Main {
         }
         output.close();
     }
+    public static int byteArrayToLeInt(byte[] b) {
+        final ByteBuffer bb = ByteBuffer.wrap(b);
+        bb.order(ByteOrder.LITTLE_ENDIAN);
+        return bb.getInt();
+    }
+    public static byte[] leIntToByteArray(int i) {
+        final ByteBuffer bb = ByteBuffer.allocate(Integer.SIZE / Byte.SIZE);
+        bb.order(ByteOrder.LITTLE_ENDIAN);
+        bb.putInt(i);
+        return bb.array();
+    }
+
+    public static int convertByteToInt(byte b){
+        return Byte.toUnsignedInt(b);
+    }
 }
+
