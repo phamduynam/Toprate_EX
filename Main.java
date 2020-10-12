@@ -83,11 +83,11 @@ public  class Main {
 
                 // Neeu mau do vuot troi
                 if (red > blue && red > green) {
-
+                     if(red > green + blue){
                        int temp = red;
                        red = blue;
                        blue = temp;
-
+                       }
                 }
 
                 output.write(blue);
